@@ -5,8 +5,6 @@ from typing import Dict
 from app.models import DeviceInfo
 from app.config import Config
 import logging
-import re
-import os
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
@@ -16,9 +14,6 @@ app = FastAPI()
 config = Config("config/config.json")
 device_data: Dict[str, DeviceInfo] = {}
 firmware_path = "data/firmware/"
-
-MAC_REGEX = r"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"
-FW_VERSION_REGEX = r"^v\d+\.\d+\.\d+$"
 
 
 def get_current_time() -> datetime:
@@ -31,13 +26,6 @@ def validate_headers(request: Request) -> Dict[str, str]:
     fw_version = request.headers.get("_br_fwv_")
     if not mac or not fw_version:
         raise HTTPException(status_code=400, detail="Missing custom headers")
-
-    if not re.match(MAC_REGEX, mac):
-        raise HTTPException(status_code=400, detail="Invalid MAC address format")
-
-    if not re.match(FW_VERSION_REGEX, fw_version):
-        raise HTTPException(status_code=400, detail="Invalid firmware version format")
-
     return {"mac": mac, "fw_version": fw_version}
 
 
@@ -50,12 +38,12 @@ async def get_version(request: Request) -> PlainTextResponse:
             **device_info,
             last_seen_time=get_current_time()
         )
-        device.save()
+        await device.save()
         return PlainTextResponse(config.current_version)
     except HTTPException as e:
         raise e
     except Exception as e:
-        logger.exception("Unexpected error in /version.txt endpoint")
+        logger.error(f"Unexpected error in /version.txt endpoint: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -68,15 +56,10 @@ async def get_firmware(request: Request) -> FileResponse:
             **device_info,
             update_time=get_current_time()
         )
-        device.save()
-
-        firmware_file = f"{firmware_path}{config.current_version}.bin"
-        if not os.path.exists(firmware_file):
-            raise HTTPException(status_code=404, detail="Firmware file not found")
-
-        return FileResponse(firmware_file)
+        await device.save()
+        return FileResponse(f"{firmware_path}{config.current_version}.bin")
     except HTTPException as e:
         raise e
     except Exception as e:
-        logger.exception("Unexpected error in /firmware.bin endpoint")
+        logger.error(f"Unexpected error in /firmware.bin endpoint: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

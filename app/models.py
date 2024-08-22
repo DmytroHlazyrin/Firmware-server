@@ -4,6 +4,7 @@ from datetime import datetime
 from blinker import signal
 from app.google_sheets import google_sheets_client
 import logging
+import asyncio
 
 # Logging configuration
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ class DeviceInfo(BaseModel):
     last_seen_time: Optional[datetime] = None
     update_time: Optional[datetime] = None
 
-    def save(self):
+    async def save(self):
         """Save the model to Google Sheets and send a signal."""
         data = {
             "mac": self.mac,
@@ -27,7 +28,7 @@ class DeviceInfo(BaseModel):
             "update_time": self.update_time.isoformat() if self.update_time else ""
         }
         try:
-            google_sheets_client.update_device_info(data)
+            asyncio.create_task(google_sheets_client.update_device_info(data))
             device_updated.send(self.__class__, device=self)
         except Exception as e:
-            logger.exception("Error saving device info")
+            logger.error(f"Error saving device info: {e}")
