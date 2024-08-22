@@ -1,3 +1,6 @@
+import os
+import re
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import PlainTextResponse, FileResponse
 from datetime import datetime, UTC
@@ -15,6 +18,8 @@ config = Config("config/config.json")
 device_data: Dict[str, DeviceInfo] = {}
 firmware_path = "data/firmware/"
 
+MAC_REGEX = r"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"
+FW_VERSION_REGEX = r"^v\d+\.\d+\.\d+$"
 
 def get_current_time() -> datetime:
     return datetime.now(UTC)
@@ -26,6 +31,13 @@ def validate_headers(request: Request) -> Dict[str, str]:
     fw_version = request.headers.get("_br_fwv_")
     if not mac or not fw_version:
         raise HTTPException(status_code=400, detail="Missing custom headers")
+
+    if not re.match(MAC_REGEX, mac):
+        raise HTTPException(status_code=400, detail="Invalid MAC address format")
+
+    if not re.match(FW_VERSION_REGEX, fw_version):
+        raise HTTPException(status_code=400, detail="Invalid firmware version format")
+
     return {"mac": mac, "fw_version": fw_version}
 
 
@@ -57,6 +69,12 @@ async def get_firmware(request: Request) -> FileResponse:
             update_time=get_current_time()
         )
         await device.save()
+
+        firmware_file = f"{firmware_path}{config.current_version}.bin"
+        if not os.path.exists(firmware_file):
+            raise HTTPException(
+                status_code=404, detail="Firmware file not found"
+            )
         return FileResponse(f"{firmware_path}{config.current_version}.bin")
     except HTTPException as e:
         raise e
