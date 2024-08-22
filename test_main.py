@@ -40,6 +40,7 @@ async def test_get_firmware_missing_headers():
         assert response.status_code == 400
         assert response.json() == {"detail": "Missing custom headers"}
 
+
 @pytest.mark.asyncio
 async def test_update_device_info():
     async with AsyncClient(app=app, base_url="http://test") as client:

@@ -21,6 +21,7 @@ firmware_path = "data/firmware/"
 MAC_REGEX = r"^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$"
 FW_VERSION_REGEX = r"^v\d+\.\d+\.\d+$"
 
+
 def get_current_time() -> datetime:
     return datetime.now(UTC)
 
@@ -30,13 +31,16 @@ def validate_headers(request: Request) -> Dict[str, str]:
     mac = request.headers.get("_br_mac_")
     fw_version = request.headers.get("_br_fwv_")
     if not mac or not fw_version:
-        raise HTTPException(status_code=400, detail="Missing custom headers")
+        raise HTTPException(status_code=400,
+                            detail="Missing custom headers")
 
     if not re.match(MAC_REGEX, mac):
-        raise HTTPException(status_code=400, detail="Invalid MAC address format")
+        raise HTTPException(status_code=400,
+                            detail="Invalid MAC address format")
 
     if not re.match(FW_VERSION_REGEX, fw_version):
-        raise HTTPException(status_code=400, detail="Invalid firmware version format")
+        raise HTTPException(status_code=400,
+                            detail="Invalid firmware version format")
 
     return {"mac": mac, "fw_version": fw_version}
 

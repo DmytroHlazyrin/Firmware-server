@@ -24,8 +24,10 @@ class DeviceInfo(BaseModel):
         data = {
             "mac": self.mac,
             "fw_version": self.fw_version,
-            "last_seen_time": self.last_seen_time.isoformat() if self.last_seen_time else "",
-            "update_time": self.update_time.isoformat() if self.update_time else ""
+            "last_seen_time": self.last_seen_time.isoformat() if
+            self.last_seen_time else "",
+            "update_time": self.update_time.isoformat() if
+            self.update_time else ""
         }
         try:
             asyncio.create_task(google_sheets_client.update_device_info(data))
