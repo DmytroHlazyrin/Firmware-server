@@ -78,6 +78,21 @@ docker stop firmware-server
 docker rm firmware-server
 ```
 
+#### Requests
+To communicate with a server requests must have the next headers:
+- `_br_mac_` - device MAC address
+- `_br_fwv_` - current device firmware version
+
+Check firmware version request:
+```bash
+curl -X GET http://localhost:8000/version.txt -H 'cache-control: no-cache' -H 'Connection: close' -H '_br_mac_: 00:11:22:33:44:55' -H '_br_fwv_: v1.0.0'
+```
+
+Download firmware binary request:
+```bash
+curl -X GET http://localhost:8000/firmware.bin -H 'cache-control: no-cache' -H 'Connection: close' -H '_br_mac_: 00:11:22:33:44:55' -H '_br_fwv_: v1.0.0'
+```
+
 ### Testing
 To run the tests, use:
 ```bash
